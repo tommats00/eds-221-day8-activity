@@ -1,0 +1,86 @@
+---
+title: "Day 8 End of Day activities"
+author: "Tom Gibbens-Matsuyama"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+## Load in libraries and data
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(tidyr)
+library(here)
+
+space <- read_csv(here("data", "space_launches.csv"))
+```
+
+## Create the worst graph ever!
+
+```{r}
+space_plot <- ggplot(space, aes(x = mission, y = agency)) +
+  geom_point() +
+  labs(title = "MISSION\n& AGENCY",
+       caption = "WHAT IS THE MEANING OF LIFE") +
+  theme(panel.grid = element_line(color = "red"),
+        plot.background = element_rect(fill = "pink"),
+        text = element_text(size = 54, family = "papyrus")) +
+  annotate("text", x = "Thor 3", y = "US", label = "HELLO") 
+
+ggsave(here("figs", "space_plot.png"), height = 7, width = 7)
+```
+
+## San Fran Data
+
+```{r}
+san_fran <- read_csv(here("data", "San_Francisco_Communitywide_Greenhouse_Gas_Inventory.csv"))
+```
+
+```{r}
+sector_gen <- san_fran %>% 
+  select(Sector_General, Emissions_mtCO2e) %>% 
+  group_by(Sector_General) %>% 
+  summarize(sum(Emissions_mtCO2e, na.rm = TRUE)) 
+```
+
+```{r}
+sum_green <- san_fran %>% 
+  select(Calendar_Year, Commodity_Type, Emissions_mtCO2e) %>% 
+  group_by(Calendar_Year, Commodity_Type) %>% 
+  summarize(sum(Emissions_mtCO2e, na.rm = TRUE))
+```
+
+```{r}
+obs_2005 <- san_fran %>% 
+  filter(Calendar_Year == 2005) %>% 
+  filter(str_detect(Sector_Detail2,"PG&E")) %>% 
+  select(Calendar_Year, Emissions_mtCO2e, Sector_Detail2)
+
+
+```
+
+## Task 3 
+
+```{r}
+gas_elec <- san_fran %>% 
+  filter(Commodity_Type %in% c("Gasoline", "Electricity")) %>% 
+  select(Calendar_Year, Sector_Detail2, Sector_General, Sector_Detail1,
+         Commodity_Type, Emissions_mtCO2e) %>% 
+  group_by(Sector_Detail1, Calendar_Year) %>% 
+  summarize(sum(Emissions_mtCO2e, na.rm = TRUE)) %>% 
+  filter(Sector_Detail1 %in% c("Cars & Trucks", "Public Transportation", "Commercial & Industrial", "Residential"))
+
+fig1 <- ggplot(gas_elec, aes(x = Calendar_Year, y = `sum(Emissions_mtCO2e, na.rm = TRUE)`,
+                     colour = Sector_Detail1)) +
+  geom_line(size = 1) +
+  labs(x = "Year",
+       y = "Total Emissions (mtCO2)",
+       title = "Total CO2 Emissions in San Francisco") +
+  theme_bw()
+
+ggsave(here("figs", "fig_1.png"))
+```
+
